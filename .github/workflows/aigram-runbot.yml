@@ -1,0 +1,125 @@
+name: AIGram RunBot
+
+# Chỉ chạy khi bấm "Run Workflow" thủ công. Không dùng trigger "on: push": sửa/lưu file qua app Git
+# client (vd SourceFiles) sẽ tự push lên main, nếu có push trigger thì bot tự chạy lại ngoài ý muốn
+# -> nhiều job chồng nhau. Việc này KHÔNG ảnh hưởng khả năng nhận/trả lời tin nhắn: bot chỉ "sống"
+# trong lúc job đang chạy (do bạn chủ động bấm Run Workflow).
+on:
+  workflow_dispatch:
+    inputs:
+      target_chat_id:
+        description: 'Chat ID/username (trống = mặc định)'
+        required: false
+        default: ''
+      custom_message:
+        description: 'Tin nhắn thủ công (trống = AI tự soạn)'
+        required: false
+        default: ''
+      personality_mode:
+        description: 'Tính cách bot'
+        required: true
+        type: choice
+        default: 'dynamic'
+        options:
+          - dynamic
+          - angel
+          - devil
+      reminder_mode:
+        description: 'Chế độ chọn'
+        required: true
+        type: choice
+        default: 'auto'
+        options:
+          - 'auto'
+          - 'off'
+          - 'custom'
+      custom_minutes:
+        description: 'Chế độ "custom"'
+        required: false
+        default: '60'
+      group_mode:
+        description: 'Tương tác nhóm/kênh'
+        required: true
+        type: choice
+        default: 'mention_only'
+        options:
+          - 'mention_only'
+          - 'smart'
+      run_clean_logs:
+        description: 'Dọn dẹp (xóa lịch sử commit + run cũ)'
+        required: false
+        type: boolean
+        default: false
+
+# Xem README.md để biết chi tiết ý nghĩa từng lựa chọn ở trên.
+
+# Nếu chạy workflow lần nữa trong lúc job trước còn sống, Actions tự huỷ job cũ trước khi chạy job
+# mới -> tránh 2 job cùng gọi Gemini song song.
+concurrency:
+  group: aigram-runbot
+  cancel-in-progress: true
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+    # Lưới an toàn: dù Python lỗi không tự thoát, job vẫn bị Actions hủy đúng giờ, tránh treo vô hạn.
+    timeout-minutes: 200
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytelegrambotapi requests pyyaml google-genai
+
+    # --- BƯỚC 1: KHỞI CHẠY BOT TELEGRAM CHÍNH ---
+    - name: Run AIGram Bot
+      env:
+        TELEGRAM_BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+        DEFAULT_CHAT_ID: ${{ secrets.CHAT_ID }}
+        INPUT_CHAT_ID: ${{ github.event.inputs.target_chat_id }}
+        CUSTOM_MESSAGE: ${{ github.event.inputs.custom_message }}
+        SELECTED_PERSONALITY: ${{ github.event.inputs.personality_mode }}
+        REMINDER_MODE: ${{ github.event.inputs.reminder_mode }}
+        CUSTOM_MINUTES: ${{ github.event.inputs.custom_minutes }}
+        GROUP_MODE: ${{ github.event.inputs.group_mode }}
+        GITHUB_EVENT_NAME: ${{ github.event_name }}
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      run: python src/main.py
+
+    # --- BƯỚC 2: DỌN DẸP REPO - CHỈ SAU KHI BOT ĐÃ CHẠY XONG TRỌN VẸN ---
+    # continue-on-error: dù bước này lỗi (vd thiếu quyền force-push), job vẫn tính là THÀNH CÔNG,
+    # vì bước chính (bot chat) đã hoàn tất.
+    - name: Clean Repository Logs (If Enabled)
+      if: ${{ github.event.inputs.run_clean_logs == 'true' }}
+      continue-on-error: true
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        RUN_CLEAN_LOGS: 'true'
+        TELEGRAM_TOKEN: ${{ secrets.BOT_TOKEN }}
+        TELEGRAM_TO: ${{ secrets.CHAT_ID }}
+      run: |
+        set -e
+        CLEAN_FILE=""
+        if [ -f "src/clean.py" ]; then
+          CLEAN_FILE="src/clean.py"
+        elif [ -f "clean.py" ]; then
+          CLEAN_FILE="clean.py"
+        fi
+
+        if [ -n "$CLEAN_FILE" ]; then
+          echo "🗑️ Đang chạy: $CLEAN_FILE"
+          python "$CLEAN_FILE"
+        else
+          echo "ℹ️ Không tìm thấy file clean.py, bỏ qua dọn dẹp."
+        fi

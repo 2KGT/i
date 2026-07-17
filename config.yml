@@ -1,0 +1,15 @@
+# Cấu hình kết nối Telegram
+telegram:
+  bot_token: "THAY_THE_BANG_TOKEN_BOT_CUA_BAN"
+  chat_id: "THAY_THE_BANG_CHAT_ID_MAC_DINH"
+
+# Cấu hình AI Gemini
+gemini:
+  api_key: "THAY_THE_BANG_GEMINI_API_KEY_CUA_BAN"
+  
+  # CÔNG TẮC TÍNH CÁCH (chọn 1 trong 3 chế độ):
+  # "dynamic" (khuyên dùng) -> Bot tự linh hoạt chuyển giọng theo ngữ cảnh mỗi tin nhắn: dịu dàng khi
+  #            người dùng buồn/nghiêm túc, cà khịa vui vẻ khi họ đang đùa giỡn/thoải mái.
+  # "angel"   -> Ép cố định: Dịu ngọt, đáng yêu, hài hước suốt cả phiên chạy.
+  # "devil"   -> Ép cố định: Cà khịa, xéo xắt nhẹ nhàng suốt cả phiên chạy.
+  personality_mode: "dynamic"
