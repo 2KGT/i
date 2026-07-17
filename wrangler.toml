@@ -1,0 +1,21 @@
+name = "aigram-bot"
+main = "src/index.js"
+compatibility_date = "2026-01-01"
+
+# Cron Trigger: chạy mỗi phút để kiểm tra ai đang im lặng quá lâu (10'/30') và gửi nhắc nhở.
+# Đây là cách thay thế cho threading.Thread + time.sleep() trong bản Python cũ - Cloudflare Workers
+# không hỗ trợ tiến trình chạy nền liên tục, nên phải dùng lịch chạy định kỳ (tối thiểu 1 phút/lần).
+[triggers]
+crons = ["* * * * *"]
+
+# Cloudflare KV: thay thế cho dict `users = {}` trong bản Python cũ (vốn lưu trong RAM, mất khi tiến
+# trình dừng). KV lưu bền vững giữa các lần Worker được gọi - mỗi request là 1 lần "sống" độc lập.
+# Sau khi tạo namespace thật (wrangler kv namespace create USERS_KV), thay "id" bên dưới bằng ID thật.
+[[kv_namespaces]]
+binding = "USERS_KV"
+id = "THAY_BANG_KV_NAMESPACE_ID_THAT"
+
+# Biến môi trường không nhạy cảm (đặt trực tiếp ở đây được, khác secrets phải dùng wrangler secret put)
+[vars]
+PERSONALITY_MODE = "dynamic"
+GROUP_MODE = "mention_only"
