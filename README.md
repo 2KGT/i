@@ -7,7 +7,7 @@ như Render.
 
 ## Khác biệt so với bản Python
 
-| | Bản Python (GitHub Actions) | Bản JS (Cloudflare Workers) |
+| | Python (GitHub Actions) | JS (Cloudflare Workers) |
 |---|---|---|
 | Cơ chế nhận tin | Polling (`infinity_polling()`) | Webhook (Telegram tự gọi tới) |
 | Cần chạy nền? | Có, phải bấm Run Workflow | Không, luôn sẵn sàng 24/7 |
