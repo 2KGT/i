@@ -1,5 +1,4 @@
-# AIGram Bot Cloudflare Workers
- (miễn phí, không sleep)
+# AIGram Bot Cloudflare Workers (miễn phí, không sleep)
 
 Bản viết lại từ Python (GitHub Actions) sang JavaScript (Cloudflare Workers), dùng kiến trúc
 **webhook** thay vì polling - Telegram tự gọi thẳng URL của bạn mỗi khi có tin nhắn mới, nên
