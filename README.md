@@ -1,4 +1,4 @@
-# AIGram Bot phiên bản Cloudflare Workers
+# AIGram Bot Cloudflare Workers
  (miễn phí, không sleep)
 
 Bản viết lại từ Python (GitHub Actions) sang JavaScript (Cloudflare Workers), dùng kiến trúc
